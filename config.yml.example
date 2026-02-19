@@ -1,0 +1,36 @@
+# Redmine Password Visual Packer - Configuration Example
+# Copy to config.yml and customize before running
+
+redmine:
+  url: "https://pass.regione.marche.it"
+  api_key: "YOUR_API_KEY_HERE"
+  assign_to_id: 1                # User ID to reassign resolved tickets to (optional)
+  resolved_status_id: 3          # Status ID for "Resolved" (check your Redmine instance)
+
+output:
+  dir: "output"                  # Directory where ticket files and archives are saved
+
+templates:
+  docx: "app/static/template.docx"  # Path to DOCX template
+
+visual:
+  script: "app/visual_cryptography_py3__versione2 1 1.py"  # Path to visual crypto script
+  font: "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"  # Font for password rendering
+
+archive:
+  default_password: "DefaultArchivePassword123"  # Fallback password for 7z archives
+
+# Per-project archive encryption passwords
+# Maps project identifier (or ID) -> encryption password
+projects:
+  myproject: "ProjectSpecificPassword1"
+  another-project: "ProjectSpecificPassword2"
+  # Add more projects as needed
+
+# Configuration for reporting missing projects
+# If a ticket's project is not in the 'projects' list above, a new issue will be created
+report_missing_project:
+  project: "admin"                           # Project ID/identifier where report issues are created
+  assigned_to_id: 1                          # User to assign report issues to
+  subject: "Missing project configuration: {project}"
+  description: "Ticket {ticket} references project {project} which is not configured in the encryption password list. Please review and update config.yml"

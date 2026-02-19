@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  pwd-gen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: redmine-pwd-packer
+    environment:
+      # Configuration file path (mount config.yml as volume)
+      - CONFIG_YAML=/app/config.yml
+    volumes:
+      # Main configuration file (read-only)
+      - ./config.yml:/app/config.yml:ro
+      # Output directory for results
+      - ./output:/app/output
+      # Application code
+      - ./app:/app
+      # Entrypoint script (read-only)
+      - ./entrypoint.sh:/app/entrypoint.sh:ro
+    # Run main processing by default
+    entrypoint: ["python", "main.py"]
+    # To run tests instead, use:
+    # entrypoint: ["python", "test_runner.py"]

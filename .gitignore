@@ -1,0 +1,70 @@
+**.7z
+**.zip
+config.yml
+.env*
+**/*pwd*.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# IDE - Vim
+.vim/
+*.swp
+*.swo
+*~
+.netrwhist
+tags
+swap/
+
+# IDE - Kate
+.kate-swp
+.kateproject.local
+
+# Project-specific
+ticket_*/
+vx.json
+config.yml
+output/
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
