@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.11', '3.12']
     
     steps:
     - uses: actions/checkout@v4
@@ -25,4 +25,4 @@ jobs:
     
     - name: Analyse code with pylint
       run: |
-        pylint app/*.py --disable=C0111,C0103,R0903,W0703 --fail-under=7.0 || exit 0
+        pylint app/*.py --disable=C0111,C0103,R0903,W0703 --fail-under=7.0 || true

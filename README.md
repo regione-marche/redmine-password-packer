@@ -7,6 +7,27 @@ Un sistema automatico per elaborare ticket Redmine e generare archivi `.7z` cifr
 - Crittografia visuale (condivisione di segreti visivi)
 - Documento Word `.docx` generato con template personalizzato a partire dalla prima parte della password visuale
 
+## 📊 Flusso di elaborazione
+
+Quando un ticket con stato "Nuovo" viene assegnato all'utente associato all'applicativo:
+
+1. Viene generata una password casuale per il ticket.
+2. La password viene trasformata in immagine base e poi divisa in due immagini (`Password_A.png` e `Password_B.png`) tramite crittografia visuale.
+3. Viene creato un documento `.docx` usando il template configurato, includendo la prima immagine della password (`Password_A.png`), in modo che le due componenti possano essere inviate separatamente.
+4. Tutti gli artefatti del ticket vengono inseriti in un archivio `.7z` cifrato.
+5. La password dell'archivio `.7z` è quella dedicata al progetto del ticket (presa dalla configurazione progetto; in fallback viene usata quella di default).
+6. L'archivio viene allegato al ticket Redmine originale.
+7. Il ticket viene aggiornato con stato e assegnatario (`assigned_to_id`) in base alla configurazione del progetto (con fallback ai default globali).
+
+### Comportamento per progetti mancanti
+
+Se un ticket appartiene a un progetto non presente in `config.yml`:
+
+- Apre automaticamente un ticket nel progetto di gestione del sistema
+- Salta l'elaborazione del ticket originale
+- Continua con i ticket successivi
+
+
 ## 📋 Caratteristiche
 
 - **Configurazione centralizzata YAML**: tutti i parametri in un unico file `config.yml`
@@ -144,26 +165,6 @@ Per abilitare log dettagliato, imposta in `config.yml`:
 logging:
   level: "DEBUG"
 ```
-
-## 📊 Flusso di elaborazione
-
-Quando un ticket con stato "Nuovo" viene assegnato all'utente associato all'applicativo:
-
-1. Viene generata una password casuale per il ticket.
-2. La password viene trasformata in immagine base e poi divisa in due immagini (`Password_A.png` e `Password_B.png`) tramite crittografia visuale.
-3. Viene creato un documento `.docx` usando il template configurato, includendo la prima immagine della password (`Password_A.png`).
-4. Tutti gli artefatti del ticket vengono inseriti in un archivio `.7z` cifrato.
-5. La password dell'archivio `.7z` è quella dedicata al progetto del ticket (presa dalla configurazione progetto; in fallback viene usata quella di default).
-6. L'archivio viene allegato al ticket Redmine originale.
-7. Il ticket viene aggiornato con stato, categoria (`category_id`) e assegnatario (`assigned_to_id`) in base alla configurazione del progetto (con fallback ai default globali).
-8. Dopo l'upload, gli artefatti locali temporanei (directory ticket e archivio locale) vengono rimossi.
-
-### Comportamento per progetti mancanti
-
-Se un ticket appartiene a un progetto non presente in `config.yml`:
-- Apre automaticamente un ticket nel progetto di segnalazione
-- Salta l'elaborazione del ticket originale
-- Continua con i ticket successivi
 
 ## 🧪 Test Runner
 
