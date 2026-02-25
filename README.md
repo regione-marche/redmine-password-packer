@@ -1,18 +1,21 @@
 # 🔐 Redmine Password Packer
+Versione: `0.1`
 
 Un sistema automatico per elaborare ticket Redmine e generare archivi `.7z` cifrati contenenti:
 - Password generate da ticket Redmine
 - Immagini della password (bianco e nero)
 - Crittografia visuale (condivisione di segreti visivi)
-- Documento Word `.docx` generato con template personalizzato via `mkdocx.py`
+- Documento Word `.docx` generato con template personalizzato a partire dalla prima parte della password visuale
 
 ## 📋 Caratteristiche
 
 - **Configurazione centralizzata YAML**: tutti i parametri in un unico file `config.yml`
-- **Archivi 7z cifrati**: password passate via stdin (non visibili in `ps`)
+- **Archivi 7z cifrati**: password passate via stdin (non visibili in `ps`) e header cifrato (`-mhe=on`)
 - **Password per progetto**: possibilità di usare password diverse per ogni progetto Redmine
+- **Template DOCX per progetto**: possibilità di specificare `docx_template` per singolo progetto
+- **Parametri ticket per progetto**: supporto a `category_id` e `assigned_to_id` per update ticket
 - **Segnalazione automatica**: se un progetto non è configurato, apre automaticamente un ticket di segnalazione
-- **Elaborazione strutturata**: crea una directory per ogni ticket contenente immagini, password e DOCX
+- **Hardening locale**: file sensibili con permessi stretti e cleanup automatico degli artefatti locali dopo upload
 - **Test suite integrata**: verifica connessione, elenca ticket/progetti, testa creazione archivi
 
 ## 🔧 Setup
@@ -100,8 +103,8 @@ docker-compose build
 # Eseguire elaborazione principale
 docker-compose run --rm pwd-gen
 
-# Oppure eseguire i test
-docker-compose run --rm pwd-gen python test_runner.py
+# Eseguire i test
+docker-compose run --rm pwd-gen-test
 ```
 
 ### Con Docker direttamente
@@ -142,7 +145,11 @@ Per ogni ticket assegnato all'utente (stato "Nuovo"):
 6. **Aggiorna ticket Redmine**:
    - Allega l'archivio 7z
    - Imposta lo stato a "Risolto"
-   - Opzionalmente riassegna a un utente configurato
+   - Imposta `category_id` per progetto (se configurato)
+   - Riassegna secondo priorità: `projects.<project>.ticket.assigned_to_id` poi `redmine.assign_to_id`
+7. **Cleanup locale**:
+   - Rimuove directory temporanea del ticket
+   - Rimuove archivio `.7z` locale dopo upload
 
 ### Comportamento per progetti mancanti
 
@@ -190,18 +197,15 @@ Opzioni principali:
 │   │   └── template.docx                   # Template DOCX da personalizzare
 │   └── visual_cryptography_py3__*.py       # Script crittografia visuale
 └── output/                                 # Directory risultati (non committare)
-    └── ticket_{ID}/
-        ├── ticket_{ID}_password.txt
-        ├── ticket_{ID}_base.png
-        ├── Password_A.png
-        ├── Password_B.png
-        └── ticket_{ID}.docx
-    └── ticket_{ID}.7z
+    └── (artefatti temporanei durante l'elaborazione)
 ```
 
 ## 🔐 Sicurezza
 
 - **Password non visibili**: passate via stdin a `7z`, non in argv
+- **Header archivio cifrato**: `7z` usa `-mhe=on`
+- **Permessi stretti**: directory `0700`, file sensibili `0600`
+- **Pulizia post-upload**: eliminazione automatica di file password/immagini/docx/archivio locale
 - **Configurazione centralizzata**: credenziali in unico file
 - **Segnalazione**: tickets avvisano di problemi di configurazione
 - `.gitignore` protegge `config.yml`, `output/` e `ticket_*` da commit accidentali
@@ -229,4 +233,4 @@ Lo script `mkdocx.py` inserirà l'immagine della password nel template.
 
 ## 📄 Licenza
 
-Da specificare
+Questo progetto è distribuito sotto licenza **GNU GPL v3.0 o successiva**.
