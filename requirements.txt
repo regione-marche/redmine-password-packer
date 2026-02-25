@@ -2,3 +2,4 @@ python-redmine
 python-dotenv
 Pillow
 PyYAML
+python-docx

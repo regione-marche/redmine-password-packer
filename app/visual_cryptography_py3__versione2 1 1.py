@@ -100,31 +100,23 @@ out_image_B.save(out_filename_B, 'PNG')
 # Apply transparency to white pixels
 img_A = Image.open(out_filename_A)
 img_A = img_A.convert("RGBA")
-datas = img_A.getdata()
-
-newData = []
-for item in datas:
-    if item[0] == 255 and item[1] == 255 and item[2] == 255:
-        newData.append((255, 255, 255, 0))
-    else:
-        newData.append(item)
-
-img_A.putdata(newData)
+pixels_A = img_A.load()
+for x in range(img_A.width):
+    for y in range(img_A.height):
+        r, g, b, a = pixels_A[x, y]
+        if r == 255 and g == 255 and b == 255:
+            pixels_A[x, y] = (255, 255, 255, 0)
 img_A.save("Password_A.png", "PNG")
 
 
 img_B = Image.open(out_filename_B)
 img_B = img_B.convert("RGBA")
-datas = img_B.getdata()
-
-newData = []
-for item in datas:
-    if item[0] == 255 and item[1] == 255 and item[2] == 255:
-        newData.append((255, 255, 255, 0))
-    else:
-        newData.append(item)
-
-img_B.putdata(newData)
+pixels_B = img_B.load()
+for x in range(img_B.width):
+    for y in range(img_B.height):
+        r, g, b, a = pixels_B[x, y]
+        if r == 255 and g == 255 and b == 255:
+            pixels_B[x, y] = (255, 255, 255, 0)
 img_B.save("Password_B.png", "PNG")
 
 os.remove(out_filename_A)

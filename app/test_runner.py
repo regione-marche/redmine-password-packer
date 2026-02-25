@@ -22,16 +22,57 @@ from password_utils import genera_password, crea_immagine
 from crypto_utils import run_visual_crypto
 
 
+def _get_current_user(redmine):
+    """Recupera l'utente corrente compatibilmente con diverse versioni di redminelib."""
+    errors = []
+
+    # Newer API style: redmine.auth() may return current user
+    try:
+        auth_obj = getattr(redmine, "auth", None)
+        if callable(auth_obj):
+            user = auth_obj()
+            if user:
+                return user
+    except Exception as e:
+        errors.append(f"auth() failed: {e}")
+
+    # Older/alternate style: redmine.auth.get_current_user()
+    try:
+        auth_obj = getattr(redmine, "auth", None)
+        get_current_user = getattr(auth_obj, "get_current_user", None)
+        if callable(get_current_user):
+            user = get_current_user()
+            if user:
+                return user
+    except Exception as e:
+        errors.append(f"auth.get_current_user() failed: {e}")
+
+    # Generic resource style: redmine.user.get('current')
+    try:
+        user_resource = getattr(redmine, "user", None)
+        if user_resource is not None:
+            user = user_resource.get("current")
+            if user:
+                return user
+    except Exception as e:
+        errors.append(f"user.get('current') failed: {e}")
+
+    raise RuntimeError("Unable to fetch current user. " + " | ".join(errors))
+
+
 def test_connectivity():
     """Verifica la connessione e autenticazione con Redmine."""
     print("[*] Testing Redmine connectivity...")
     try:
         redmine = Redmine(REDMINE_URL, key=API_KEY)
-        user = redmine.auth.get_current_user()
+        user = _get_current_user(redmine)
         print(f"[✓] Connected to {REDMINE_URL} as user: {user.login} (ID: {user.id})")
         return redmine, user
     except Exception as e:
         print(f"[✗] Connection failed: {e}")
+        api_key_l = (API_KEY or "").lower()
+        if api_key_l.startswith("your_redmine_api") or API_KEY in {"CHANGEME", "", None}:
+            print("[!] API key appears to be a placeholder. Verify config.yml is loaded and redmine.api_key is valid.")
         return None, None
 
 

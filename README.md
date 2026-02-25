@@ -52,9 +52,24 @@ output:
 archive:
   default_password: "fallback_password"
 
+# opzionale: file esterno (default: projects.yml)
+# projects_file: "projects.yml"
+
 projects:
-  project-identifier-1: "password_1"
-  project-identifier-2: "password_2"
+  project-identifier-1:
+    password: "password_1"
+    docx_template: "app/static/template-project-1.docx"
+    ticket:
+      project_id: "admin"
+      category_id: 10
+      assigned_to_id: 1
+  project-identifier-2:
+    password: "password_2"
+    docx_template: "app/static/template-project-2.docx"
+    ticket:
+      project_id: "admin"
+      category_id: 20
+      assigned_to_id: 2
 
 report_missing_project:
   project: "admin"

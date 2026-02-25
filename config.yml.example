@@ -20,11 +20,30 @@ visual:
 archive:
   default_password: "DefaultArchivePassword123"  # Fallback password for 7z archives
 
-# Per-project archive encryption passwords
-# Maps project identifier (or ID) -> encryption password
+# Optional external projects file (defaults to projects.yml)
+# projects_file: "projects.yml"
+
+# Per-project configuration:
+# - password: used for 7z encryption
+# - docx_template: optional custom DOCX template for that project
+# - ticket: default fields for issue creation (project_id/category_id/assigned_to_id/...)
+#           category_id and assigned_to_id are optional, but if category_id is missing
+#           assigned_to_id must be set.
 projects:
-  myproject: "ProjectSpecificPassword1"
-  another-project: "ProjectSpecificPassword2"
+  myproject:
+    password: "ProjectSpecificPassword1"
+    docx_template: "app/static/template-myproject.docx"
+    ticket:
+      project_id: "admin"
+      category_id: 10
+      assigned_to_id: 1
+  another-project:
+    password: "ProjectSpecificPassword2"
+    docx_template: "app/static/template-another-project.docx"
+    ticket:
+      project_id: "admin"
+      category_id: 20
+      assigned_to_id: 2
   # Add more projects as needed
 
 # Configuration for reporting missing projects
