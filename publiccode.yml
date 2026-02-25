@@ -37,7 +37,7 @@ maintenance:
   type: internal
   contacts:
     - name: Costantino Giuliodori
-      email: costantino.giuliodori@regione.marche.it
+      email: costantino[dot]giuliodori [ at ] regione [dot ] marche [ dot] it
 localisation:
   localisationReady: false
   availableLanguages:
