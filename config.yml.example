@@ -20,6 +20,9 @@ visual:
 archive:
   default_password: "DefaultArchivePassword123"  # Fallback password for 7z archives
 
+logging:
+  level: "INFO"                # DEBUG, INFO, WARNING, ERROR
+
 # Optional external projects file (defaults to projects.yml)
 # projects_file: "projects.yml"
 

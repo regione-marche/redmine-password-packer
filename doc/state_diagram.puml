@@ -1,0 +1,30 @@
+@startuml
+title Redmine Password Packer - Ticket Processing State Diagram
+
+[*] --> TicketLoaded : ticket fetched from Redmine
+TicketLoaded --> AssetsGenerated : password/image/visual shares generated
+AssetsGenerated --> DocxGenerated : docx created with\nproject template or default
+
+DocxGenerated --> ProjectCheck
+
+state ProjectCheck <<choice>>
+ProjectCheck --> MissingProject : project not in config
+ProjectCheck --> ArchiveReady : project configured
+
+MissingProject --> ReportIssueAttempted : create report issue
+ReportIssueAttempted --> Skipped : skip original ticket
+
+ArchiveReady --> ArchiveCreated : encrypted 7z created
+ArchiveCreated --> UpdatingTicket : upload + update issue
+
+state UpdatingTicket {
+  [*] --> UpdateWithAssignee
+  UpdateWithAssignee --> Updated : update success
+  UpdateWithAssignee --> RetryWithoutAssignee : assigned_to_id invalid
+  RetryWithoutAssignee --> Updated : retry success
+}
+
+Updated --> Completed
+Skipped --> Completed
+Completed --> [*]
+@enduml

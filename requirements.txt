@@ -1,5 +1,5 @@
-python-redmine
-python-dotenv
-Pillow
-PyYAML
-python-docx
+python-redmine==2.5.0
+python-dotenv==1.2.1
+Pillow==12.1.1
+PyYAML==6.0.3
+python-docx==1.2.0

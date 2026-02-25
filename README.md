@@ -55,6 +55,9 @@ output:
 archive:
   default_password: "fallback_password"
 
+logging:
+  level: "DEBUG"
+
 # opzionale: file esterno (default: projects.yml)
 # projects_file: "projects.yml"
 
@@ -131,6 +134,15 @@ python app/main.py
 
 # Eseguire test
 python app/test_runner.py
+```
+
+### Logging di debug
+
+Per abilitare log dettagliato, imposta in `config.yml`:
+
+```yaml
+logging:
+  level: "DEBUG"
 ```
 
 ## 📊 Flusso di elaborazione

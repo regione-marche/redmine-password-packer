@@ -28,6 +28,7 @@ TEMPLATE_DOCX = "/app/static/template.docx"
 
 ASSIGN_TO_ID = os.getenv("ASSIGN_TO_ID")
 RESOLVED_STATUS_ID = os.getenv("RESOLVED_STATUS_ID", "3")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 PROJECT_DEFINITIONS = {}
 PROJECT_PASSWORDS = {}
@@ -179,7 +180,7 @@ def load_project_passwords(path: str = None):
 def _apply_config_values(cfg):
     global REDMINE_URL, API_KEY, OUTPUT_DIR, TEMPLATE_DOCX, SCRIPT_VISUAL, FONT_PATH
     global ARCHIVE_PASSWORD, PROJECT_DEFINITIONS, PROJECT_PASSWORDS, PROJECT_TICKET_PARAMS, PROJECT_DOCX_TEMPLATES
-    global REPORT_CONFIG, ASSIGN_TO_ID, RESOLVED_STATUS_ID
+    global REPORT_CONFIG, ASSIGN_TO_ID, RESOLVED_STATUS_ID, LOG_LEVEL
 
     REDMINE_URL = cfg.get("redmine", {}).get("url", REDMINE_URL)
     API_KEY = cfg.get("redmine", {}).get("api_key", API_KEY)
@@ -203,6 +204,7 @@ def _apply_config_values(cfg):
 
     ASSIGN_TO_ID = cfg.get("redmine", {}).get("assign_to_id", ASSIGN_TO_ID)
     RESOLVED_STATUS_ID = cfg.get("redmine", {}).get("resolved_status_id", RESOLVED_STATUS_ID)
+    LOG_LEVEL = str(cfg.get("logging", {}).get("level", LOG_LEVEL)).upper()
 
 
 def reload_config(path: str = None):

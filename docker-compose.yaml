@@ -5,16 +5,17 @@ services:
       dockerfile: Dockerfile
     image: redmine-password-packer:local
     container_name: redmine-pwd-packer
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       # Configuration file path (mount config.yml as volume)
       - CONFIG_YAML=/app/config.yml
     volumes:
+      # Application code
+      - ./app:/app
       # Main configuration file (read-only)
       - ./config.yml:/app/config.yml:ro
       # Output directory for results
-      - ./output:/app/output
-      # Application code
-      - ./app:/app
+      # - ./output:/app/output
       # Entrypoint script (read-only)
       - ./entrypoint.sh:/app/entrypoint.sh:ro
     # Run main processing by default
@@ -23,11 +24,12 @@ services:
   pwd-gen-test:
     image: redmine-password-packer:local
     container_name: redmine-pwd-packer-test
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - CONFIG_YAML=/app/config.yml
     volumes:
-      - ./config.yml:/app/config.yml:ro
-      - ./output:/app/output
       - ./app:/app
+      - ./config.yml:/app/config.yml:ro
+      # - ./output:/app/output
       - ./entrypoint.sh:/app/entrypoint.sh:ro
     entrypoint: ["python", "test_runner.py"]

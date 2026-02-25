@@ -1,6 +1,5 @@
 import subprocess
 import os
-import glob
 from typing import List
 
 def crea_zip_cifrato(output_dir, ticket_id, password):
@@ -29,7 +28,7 @@ def crea_7z_cifrato(ticket_dir, ticket_id, password):
 
     # Use '-p' without password so the password isn't visible in process list.
     # 7z will prompt twice for new archives; provide password twice via stdin.
-    cmd: List[str] = ['7z', 'a', '-t7z', '-p', archive] + files
+    cmd: List[str] = ['7z', 'a', '-t7z', '-mhe=on', '-p', archive] + files
     # supply password twice (enter + re-enter) and a final newline
     pw_input = (password + '\n' + password + '\n').encode()
     subprocess.run(cmd, input=pw_input, check=True)

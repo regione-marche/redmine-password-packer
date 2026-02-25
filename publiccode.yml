@@ -1,0 +1,44 @@
+publiccodeYmlVersion: 0.5.0
+name: redmine password packer
+url: https://github.com/regione-marche/redmine-password-packer
+softwareVersion: "0.1"
+releaseDate: 2026-02-25
+platforms:
+  - linux
+  - windows
+organisation:
+  uri: https://www.regione.marche.it
+usedBy:
+  - Regione Marche
+developmentStatus: beta
+softwareType: standalone/backend
+description:
+  en:
+    localisedName: redmine
+    shortDescription: password generator with visual encryption
+    longDescription: >-
+      An automated system for processing Redmine tickets and generating
+      encrypted .7z archives containing:
+
+      - Passwords generated from Redmine tickets
+
+      - Password images (black and white)
+
+      - Visual encryption (sharing visual secrets)
+
+      - Word .docx document generated with a custom template starting from the
+      first part of the visual password
+    features:
+      - creazione password da ticket
+      - crittografia visuale
+legal:
+  license: GPL-3.0-or-later
+maintenance:
+  type: internal
+  contacts:
+    - name: Costantino Giuliodori
+      email: costantino.giuliodori@regione.marche.it
+localisation:
+  localisationReady: false
+  availableLanguages:
+    - it

@@ -1,0 +1,66 @@
+@startuml
+title Redmine Password Packer - Sequence Diagram
+
+actor Scheduler as S
+participant "main.py" as M
+participant "config.py" as C
+participant "redmine_utils.py" as R
+participant "password_utils.py" as P
+participant "crypto_utils.py" as V
+participant "mkdocx.py" as D
+participant "zipper.py" as Z
+database "Redmine API" as RM
+collections "Filesystem" as FS
+
+S -> M: run()
+M -> C: load runtime config\n(project passwords, ticket params,\ndocx templates)
+M -> R: get_tickets_nuovi()
+R -> RM: issue.filter(assigned_to_id='me', status_id='1')
+RM --> R: tickets
+R --> M: tickets
+
+loop each ticket
+  M -> FS: create output/ticket_{id}
+  M -> P: genera_password()
+  P --> M: password
+  M -> FS: write ticket_{id}_password.txt
+  M -> P: crea_immagine(password)
+  P --> M: ticket_{id}_base.png
+  M -> V: run_visual_crypto(base.png)
+  V --> M: Password_A.png, Password_B.png
+
+  M -> C: resolve project_key
+  M -> C: resolve project docx_template\nor fallback templates.docx
+  M -> D: create docx from template + image A
+  D -> FS: write ticket_{id}.docx
+
+  alt project configured
+    M -> C: get project password
+  else project missing
+    M -> C: get report_missing_project config
+    M -> R: create_report_issue(subject, description,\nproject_id/category_id/assigned_to_id...)
+    R -> RM: issue.create(...)
+    RM --> R: created report issue
+    R --> M: ok
+    M --> S: skip current ticket
+  end
+
+  M -> Z: crea_7z_cifrato(ticket_dir, ticket_id, password)
+  Z -> FS: write ticket_{id}.7z
+  Z --> M: archive path
+
+  M -> C: resolve update params\n(status_id, assigned_to_id override,\ncategory_id from project)
+  M -> R: attach_and_update(issue_id, archive,\nstatus_id, assigned_to_id, category_id)
+  R -> RM: upload(archive)
+  RM --> R: upload token
+  R -> RM: issue.update(...)
+  alt assignee rejected
+    RM --> R: ValidationError (assigned invalid)
+    R -> RM: issue.update(...) without assigned_to_id
+  end
+  RM --> R: updated issue
+  R --> M: done
+end
+
+M --> S: run completed
+@enduml

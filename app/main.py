@@ -1,5 +1,7 @@
 import argparse
+import logging
 import os
+import shutil
 import subprocess
 import sys
 
@@ -18,11 +20,80 @@ from config import (
     PROJECT_TICKET_PARAMS,
     PROJECT_DOCX_TEMPLATES,
     REPORT_CONFIG,
+    LOG_LEVEL,
 )
 
+DIR_MODE = 0o700
+FILE_MODE = 0o600
+logger = logging.getLogger(__name__)
+
+
+def _safe_chmod(path, mode):
+    try:
+        os.chmod(path, mode)
+    except PermissionError:
+        # On bind-mounted paths we may not own files/dirs; keep processing.
+        pass
+
+
+def _ensure_secure_dir(path):
+    os.makedirs(path, mode=DIR_MODE, exist_ok=True)
+    _safe_chmod(path, DIR_MODE)
+
+
+def _ensure_secure_file(path):
+    if os.path.isfile(path):
+        _safe_chmod(path, FILE_MODE)
+
+
+def _ensure_secure_tree(root):
+    if not os.path.isdir(root):
+        return
+    _safe_chmod(root, DIR_MODE)
+    for dirpath, dirnames, filenames in os.walk(root):
+        _safe_chmod(dirpath, DIR_MODE)
+        for dirname in dirnames:
+            _safe_chmod(os.path.join(dirpath, dirname), DIR_MODE)
+        for filename in filenames:
+            _ensure_secure_file(os.path.join(dirpath, filename))
+
+
+def _cleanup_sensitive_artifacts(ticket_dir, archive_path=None):
+    if os.path.isdir(ticket_dir):
+        shutil.rmtree(ticket_dir)
+    if archive_path and os.path.exists(archive_path):
+        os.remove(archive_path)
+
+
+def _resolve_writable_output_dir(preferred_dir):
+    """Return a writable output directory, falling back to /tmp when needed."""
+    try:
+        _ensure_secure_dir(preferred_dir)
+        probe = os.path.join(preferred_dir, ".write_probe")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+        return preferred_dir
+    except Exception as e:
+        fallback = "/tmp/redmine-password-packer-output"
+        logger.warning(
+            "Output dir '%s' is not writable (%s). Falling back to '%s'.",
+            preferred_dir,
+            e,
+            fallback,
+        )
+        _ensure_secure_dir(fallback)
+        return fallback
+
+
 def run(ticket_ids=None):
-    tickets = get_tickets_nuovi() if ticket_ids is None else [{"id": tid} for tid in ticket_ids]
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    if ticket_ids is None:
+        tickets = list(get_tickets_nuovi())
+        logger.info("Fetched %d ticket(s) assigned to current user with status 'New'", len(tickets))
+    else:
+        tickets = [{"id": tid} for tid in ticket_ids]
+        logger.info("Running in manual mode for ticket ids: %s", ticket_ids)
+    run_output_dir = _resolve_writable_output_dir(OUTPUT_DIR)
 
     # progetto->password già fornita da CONFIG YAML
     proj_pw = PROJECT_PASSWORDS or {}
@@ -30,8 +101,9 @@ def run(ticket_ids=None):
 
     for ticket in tickets:
         ticket_id = ticket['id']
-        ticket_dir = os.path.join(OUTPUT_DIR, f"ticket_{ticket_id}")
-        os.makedirs(ticket_dir, exist_ok=True)
+        ticket_dir = os.path.join(run_output_dir, f"ticket_{ticket_id}")
+        _ensure_secure_dir(ticket_dir)
+        logger.debug("Processing ticket id=%s in dir=%s", ticket_id, ticket_dir)
 
         project_key = None
         try:
@@ -40,17 +112,23 @@ def run(ticket_ids=None):
                 project_key = getattr(proj, 'identifier', None) or getattr(proj, 'name', None) or getattr(proj, 'id', None)
         except Exception:
             project_key = None
+        logger.debug("Ticket %s project key resolved to: %s", ticket_id, project_key)
 
         # 1) genera password e la salva in ticket_dir
         password = genera_password()
-        with open(os.path.join(ticket_dir, f"ticket_{ticket_id}_password.txt"), 'w') as f:
+        password_file = os.path.join(ticket_dir, f"ticket_{ticket_id}_password.txt")
+        with open(password_file, 'w') as f:
             f.write(password)
+        _ensure_secure_file(password_file)
 
         # 2) crea immagine base nella directory del ticket
         base_img = crea_immagine(password, ticket_id, ticket_dir)
 
         # 3) applica crittografia visuale -> Password_A.png, Password_B.png
         A_img, B_img = run_visual_crypto(base_img)
+        _ensure_secure_file(base_img)
+        _ensure_secure_file(A_img)
+        _ensure_secure_file(B_img)
 
         # 4) genera il DOCX usando mkdocx.py e il template DOCX
         docx_out = os.path.join(ticket_dir, f"ticket_{ticket_id}.docx")
@@ -58,7 +136,9 @@ def run(ticket_ids=None):
         project_docx_template = TEMPLATE_DOCX
         if project_key is not None and str(project_key) in proj_docx_templates:
             project_docx_template = proj_docx_templates[str(project_key)]
+        logger.debug("Ticket %s DOCX template: %s", ticket_id, project_docx_template)
         subprocess.run([sys.executable, mkdocx_py, '--template', project_docx_template, '--image', A_img, '--out', docx_out], check=True)
+        _ensure_secure_file(docx_out)
 
         # 6) comprimi la directory del ticket in 7z cifrato
         # Determina la password per il progetto del ticket (se presente nel YAML),
@@ -69,6 +149,7 @@ def run(ticket_ids=None):
             project_ticket_cfg = PROJECT_TICKET_PARAMS.get(str(project_key), {}) or {}
             if str(project_key) in proj_pw:
                 pw = proj_pw.get(str(project_key), pw)
+                logger.debug("Ticket %s using project-specific archive password", ticket_id)
             else:
                 # progetto non trovato nella mappa: apri ticket di segnalazione usando la configurazione
                 report = REPORT_CONFIG or {}
@@ -111,9 +192,13 @@ def run(ticket_ids=None):
                     print(f"[!] Progetto {project_key} non in configurazione: aperto ticket di segnalazione, skip ticket {ticket_id}")
                 else:
                     print(f"[!] Progetto {project_key} non in configurazione: ticket di segnalazione non creato, skip ticket {ticket_id}")
+                _cleanup_sensitive_artifacts(ticket_dir)
                 continue
 
+        _ensure_secure_tree(ticket_dir)
         archive_path = crea_7z_cifrato(ticket_dir, ticket_id, pw)
+        logger.debug("Ticket %s archive created at %s", ticket_id, archive_path)
+        _ensure_secure_file(archive_path)
 
         # 7) aggiorna il ticket su Redmine: allega, risolve, assegna (se configurato)
         notes = f"Automated: allegato {os.path.basename(archive_path)}. Chiudo ticket."
@@ -131,10 +216,16 @@ def run(ticket_ids=None):
             notes=notes,
             category_id=update_category_id,
         )
+        _cleanup_sensitive_artifacts(ticket_dir, archive_path)
 
-        print(f"[✓] Ticket {ticket_id} completato: {archive_path}")
+        print(f"[✓] Ticket {ticket_id} completato: archivio caricato e artefatti locali rimossi")
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=getattr(logging, LOG_LEVEL, logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    logger.debug("current userid: %s", os.getuid())
     parser = argparse.ArgumentParser(description="Redmine Password Visual Packer")
     parser.add_argument('--ticket-id', type=int, nargs='*', help="Specifica uno o più ID ticket manualmente")
     args = parser.parse_args()

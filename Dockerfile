@@ -14,6 +14,9 @@ RUN apk add --no-cache \
     ttf-dejavu \
     fontconfig
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 #COPY app/ /app
 # COPY template.html /app/template.html
@@ -21,5 +24,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN addgroup -S app && adduser -S -G app app && \
+    mkdir -p /app/output && chown -R app:app /app
+
+USER app
 
 ENTRYPOINT ["/entrypoint.sh"]

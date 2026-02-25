@@ -1,16 +1,20 @@
 from redminelib import Redmine
 from redminelib.exceptions import ValidationError
+import logging
 import os
 from config import REDMINE_URL, API_KEY
 
 redmine = Redmine(REDMINE_URL, key=API_KEY)
+logger = logging.getLogger(__name__)
 
 def get_tickets_nuovi():
+    logger.debug("Querying Redmine for assigned_to_id='me', status_id='1'")
     return redmine.issue.filter(assigned_to_id='me', status_id='1')  # 1 = "Nuovo"
 
 
 def attach_and_update(issue_id, archive_path, assign_to_id=None, status_id=None, notes=None, category_id=None):
     """Allega `archive_path` all'issue e aggiorna campi issue se forniti."""
+    logger.debug("Uploading archive for issue %s: %s", issue_id, archive_path)
     with open(archive_path, 'rb') as f:
         upload = redmine.upload(f)
 
@@ -32,6 +36,14 @@ def attach_and_update(issue_id, archive_path, assign_to_id=None, status_id=None,
 
     params['uploads'] = uploads
 
+    logger.debug(
+        "Updating issue %s with params: status_id=%s assigned_to_id=%s category_id=%s uploads=%d",
+        issue_id,
+        params.get('status_id'),
+        params.get('assigned_to_id'),
+        params.get('category_id'),
+        len(uploads),
+    )
     try:
         redmine.issue.update(issue_id, **params)
     except ValidationError as e:
