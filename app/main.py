@@ -64,7 +64,9 @@ def run(ticket_ids=None):
         # Determina la password per il progetto del ticket (se presente nel YAML),
         # altrimenti usa ARCHIVE_PASSWORD. Se il progetto non è noto, apri un ticket di segnalazione e salta il ticket.
         pw = ARCHIVE_PASSWORD
+        project_ticket_cfg = {}
         if project_key is not None:
+            project_ticket_cfg = PROJECT_TICKET_PARAMS.get(str(project_key), {}) or {}
             if str(project_key) in proj_pw:
                 pw = proj_pw.get(str(project_key), pw)
             else:
@@ -115,7 +117,20 @@ def run(ticket_ids=None):
 
         # 7) aggiorna il ticket su Redmine: allega, risolve, assegna (se configurato)
         notes = f"Automated: allegato {os.path.basename(archive_path)}. Chiudo ticket."
-        attach_and_update(ticket_id, archive_path, assign_to_id=ASSIGN_TO_ID, status_id=RESOLVED_STATUS_ID, notes=notes)
+        update_assign_to_id = ASSIGN_TO_ID
+        update_category_id = None
+        if isinstance(project_ticket_cfg, dict):
+            update_category_id = project_ticket_cfg.get('category_id')
+            if project_ticket_cfg.get('assigned_to_id') not in (None, ''):
+                update_assign_to_id = project_ticket_cfg.get('assigned_to_id')
+        attach_and_update(
+            ticket_id,
+            archive_path,
+            assign_to_id=update_assign_to_id,
+            status_id=RESOLVED_STATUS_ID,
+            notes=notes,
+            category_id=update_category_id,
+        )
 
         print(f"[✓] Ticket {ticket_id} completato: {archive_path}")
 

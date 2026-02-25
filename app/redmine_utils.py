@@ -9,8 +9,8 @@ def get_tickets_nuovi():
     return redmine.issue.filter(assigned_to_id='me', status_id='1')  # 1 = "Nuovo"
 
 
-def attach_and_update(issue_id, archive_path, assign_to_id=None, status_id=None, notes=None):
-    """Allega `archive_path` all'issue e aggiorna stato/assegnatario se forniti."""
+def attach_and_update(issue_id, archive_path, assign_to_id=None, status_id=None, notes=None, category_id=None):
+    """Allega `archive_path` all'issue e aggiorna campi issue se forniti."""
     with open(archive_path, 'rb') as f:
         upload = redmine.upload(f)
 
@@ -27,6 +27,8 @@ def attach_and_update(issue_id, archive_path, assign_to_id=None, status_id=None,
         params['status_id'] = status_id
     if assign_to_id:
         params['assigned_to_id'] = assign_to_id
+    if category_id not in (None, ''):
+        params['category_id'] = category_id
 
     params['uploads'] = uploads
 
