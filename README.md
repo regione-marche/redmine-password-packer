@@ -147,21 +147,16 @@ logging:
 
 ## 📊 Flusso di elaborazione
 
-Per ogni ticket assegnato all'utente (stato "Nuovo"):
+Quando un ticket con stato "Nuovo" viene assegnato all'utente associato all'applicativo:
 
-1. **Genera password** e la salva in `output/ticket_{ID}/ticket_{ID}_password.txt`
-2. **Crea immagine base** della password
-3. **Applica crittografia visuale** → `Password_A.png` e `Password_B.png`
-4. **Genera DOCX** con template personalizzato (solo immagine A)
-5. **Crea archivio 7z cifrato** contenente tutto
-6. **Aggiorna ticket Redmine**:
-   - Allega l'archivio 7z
-   - Imposta lo stato a "Risolto"
-   - Imposta `category_id` per progetto (se configurato)
-   - Riassegna secondo priorità: `projects.<project>.ticket.assigned_to_id` poi `redmine.assign_to_id`
-7. **Cleanup locale**:
-   - Rimuove directory temporanea del ticket
-   - Rimuove archivio `.7z` locale dopo upload
+1. Viene generata una password casuale per il ticket.
+2. La password viene trasformata in immagine base e poi divisa in due immagini (`Password_A.png` e `Password_B.png`) tramite crittografia visuale.
+3. Viene creato un documento `.docx` usando il template configurato, includendo la prima immagine della password (`Password_A.png`).
+4. Tutti gli artefatti del ticket vengono inseriti in un archivio `.7z` cifrato.
+5. La password dell'archivio `.7z` è quella dedicata al progetto del ticket (presa dalla configurazione progetto; in fallback viene usata quella di default).
+6. L'archivio viene allegato al ticket Redmine originale.
+7. Il ticket viene aggiornato con stato, categoria (`category_id`) e assegnatario (`assigned_to_id`) in base alla configurazione del progetto (con fallback ai default globali).
+8. Dopo l'upload, gli artefatti locali temporanei (directory ticket e archivio locale) vengono rimossi.
 
 ### Comportamento per progetti mancanti
 
