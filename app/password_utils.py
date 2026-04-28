@@ -4,8 +4,28 @@ import string
 import os
 from config import FONT_PATH
 
+def rimuovi_caratteri(stringa_originale, caratteri_da_rimuovere):
+    """
+    Rimuove i caratteri specificati dalla stringa.
+
+    Args:
+        stringa_originale: stringa di partenza
+        caratteri_da_rimuovere: stringa, lista o set di caratteri da eliminare
+
+    Returns:
+        stringa pulita
+    """
+    # Crea un set per lookup O(1)
+    da_rimuovere = set(caratteri_da_rimuovere)
+
+    # Usa una list comprehension per filtrare
+    return ''.join(c for c in stringa_originale if c not in da_rimuovere)
+
+
+
 def genera_password(lunghezza=12):
     charset = string.ascii_letters + string.digits + string.punctuation
+    charset = rimuovi_caratteri(charset, '0`\\')
     return ''.join(secrets.choice(charset) for _ in range(lunghezza))
 
 def crea_immagine(password, ticket_id, img_dir):
